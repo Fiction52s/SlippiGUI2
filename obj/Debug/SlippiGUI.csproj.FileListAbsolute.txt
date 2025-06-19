@@ -1,0 +1,13 @@
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\SlippiGUI.exe.config
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.csprojResolveAssemblyReference.cache
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.Properties.Resources.resources
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.csproj.GenerateResource.Cache
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\SlippiGUI.exe
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\SlippiGUI.pdb
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.exe
+c:\users\ficti\documents\visual studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.pdb
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.Form1.resources
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.dll
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.Shell.dll
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.xml
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.Shell.xml
