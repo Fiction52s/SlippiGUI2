@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Text.RegularExpressions;
+//using System.Buffers.Binary;
 
 using Microsoft.WindowsAPICodePack.Dialogs;
 
@@ -92,16 +93,15 @@ public struct OptionalCharacterColour
     public byte color;
 }
 
-[StructLayout(LayoutKind.Sequential)]
-public struct Time
-{
-    public UInt32 one;
-    public UInt32 two;
-    //public int hours;
-    //public int minutes;
-    //public int seconds;
-    // Update to match actual Rust Time struct
-}
+//[StructLayout(LayoutKind.Sequential)]
+//public struct Time
+//{
+//    public UInt64 time;
+//    //public int hours;
+//    //public int minutes;
+//    //public int seconds;
+//    // Update to match actual Rust Time struct
+//}
 
 [StructLayout(LayoutKind.Sequential, Size = 31)]
 public struct Name
@@ -117,7 +117,8 @@ public struct ConnectCode
     public byte[] bytes;
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+//[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 struct GameInfo
 {
     public Stage stage;
@@ -134,10 +135,10 @@ struct GameInfo
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
     public ConnectCode[] connect_codes;
 
-    public Time start_time;
+    public UInt64 start_time;
 
-    public uint timer;
-    public int duration;
+    public UInt32 timer;
+    public Int32 duration;
 
     public byte version_major;
     public byte version_minor;
@@ -150,8 +151,12 @@ namespace SlippiGUI
     {
         private string[] slpPaths;
         private string exportFolderPath;
-        private BindingList<SlippiEntry> entries;
+        private string importFolderPath;
+        private List<SlippiEntry> allEntries;
+        private BindingList<SlippiEntry> filteredEntries;
         ToolTip exportPathToolTip;
+        ToolTip importPathToolTip;
+        private string originalGameName;
         public Form1()
         {
             InitializeComponent();
@@ -163,18 +168,24 @@ namespace SlippiGUI
 
             comboBox1.SelectedIndex = 0;  // Set default without triggering event
 
-            label3.Text = "no export path set";
+            exportLabel.Text = "no export path set";
+            importLabel.Text = "no import path set";
 
-            textBox1.Text = 360.ToString();
+            clipLengthTextBox.Text = 360.ToString();
 
-            entries = new BindingList<SlippiEntry>();
+            allEntries = new List<SlippiEntry>();
+            filteredEntries = new BindingList<SlippiEntry>();
 
             dataGridView1.AutoGenerateColumns = false;
 
             dataGridView1.Columns.Clear();
 
             exportPathToolTip = new ToolTip();
-            exportPathToolTip.SetToolTip(label3, "no export path set");
+            exportPathToolTip.SetToolTip(exportLabel, "no export path set");
+
+            importPathToolTip = new ToolTip();
+            importPathToolTip.SetToolTip(exportLabel, "no import path set");
+            
             //    public string path { get; set; }
             //public string gameName { get; set; }
             //public Character p1 { get; set; }
@@ -185,27 +196,22 @@ namespace SlippiGUI
 
             // Define column for 'name'
 
-            AddGameInfoColumn("File Path", "filePath", 200, true);
-            AddGameInfoColumn("Save State Name", "gameName", 200, false);
-            AddGameInfoColumn("Player 1", "p1", 100, true);
-            AddGameInfoColumn("Player 2", "p2", 100, true);
-            AddGameInfoColumn("Stage", "stage", 100, true);
-            AddGameInfoColumn("P1 Save State Count", "numClipsP1", 50, true);
-            AddGameInfoColumn("P2 Save State Count", "numClipsP2", 50, true);
+            AddGameInfoColumn("File Name", "gameName", 250, false);
+            AddGameInfoColumn("Date", "dateAndTime", 250, true);
+            AddGameInfoColumn("Duration", "duration", 100, true);
+            AddGameInfoColumn("Player 1", "p1", 150, true);
+            AddGameInfoColumn("Player 2", "p2", 150, true);
+            AddGameInfoColumn("Stage", "stage", 200, true);
+            AddGameInfoColumn("P1 Save State Count", "numClipsP1", 75, true);
+            AddGameInfoColumn("P2 Save State Count", "numClipsP2", 75, true);
 
             totalClipsLabel.Text = "Total P1 Save States: " + 0 + "        Total P2 Save States: " + 0;//"Total save states: " + 0;
 
-            label3.AutoSize = false;
-            label3.AutoEllipsis = true;
-            label3.Width = 200;
+            exportLabel.AutoSize = false;
+            exportLabel.AutoEllipsis = true;
+            exportLabel.Width = 200;
 
-            if (File.Exists("config.txt"))
-            {
-                exportFolderPath = File.ReadAllText("config.txt");
-                label3.Text = exportFolderPath;
-                exportPathToolTip.SetToolTip(label3, exportFolderPath);
-            }
-
+            ReadSettings();
             //AddGameInfoColumn("Date and Time", "dateAndTime", 100, true);
             //AddGameInfoColumn("Match Length", "matchLength", 100, true);
 
@@ -223,14 +229,14 @@ namespace SlippiGUI
             
         }
 
-        private void button1_Click_1(object sender, EventArgs e)
+        private void saveStatesButton_Click_1(object sender, EventArgs e)
         {
             //CheckForAllClips();
 
             int clipLength = 360;
             int foundLength = 0;
 
-            if (int.TryParse(textBox1.Text.Trim(), out foundLength))
+            if (int.TryParse(clipLengthTextBox.Text.Trim(), out foundLength))
             {
                 clipLength = foundLength;
                 // It's a valid integer — use it
@@ -240,7 +246,7 @@ namespace SlippiGUI
             {
                 // Invalid input — optionally do nothing or handle it
                 // Console.WriteLine("Invalid number, ignoring input.");
-                textBox1.Text = clipLength.ToString();
+                clipLengthTextBox.Text = clipLength.ToString();
             }
 
             if( exportFolderPath == null )
@@ -250,7 +256,7 @@ namespace SlippiGUI
             }
 
             int totalExportedClips = 0;
-            foreach( var item in entries )
+            foreach( var item in filteredEntries )
             {
                 if( comboBox1.SelectedIndex == 0 )
                 {
@@ -294,18 +300,23 @@ namespace SlippiGUI
             IntPtr gameNamePtr = Marshal.AllocHGlobal(gameName_utf8.Length);
             Marshal.Copy(gameName_utf8, 0, gameNamePtr, gameName_utf8.Length);
 
-            //Program.create_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
-            Program.create_filtered_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
+            Program.create_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
+            //Program.create_filtered_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
 
             //MessageBox.Show("Created " + listBox1.Items.Count + " save states in " + exportFolder + " with game name " + gameName + " with clip length " + clipLength);
         }
 
+        private void SetInfo( int index )
+        {
+            AddEntry(slpPaths[index]);
+        }
+
         private void SetAllInfo()
         {
-            if (entries == null)
+            if (filteredEntries == null)
                 return;
 
-            entries.Clear();
+            filteredEntries.Clear();
             for( int i = 0; i < slpPaths.Length; ++i )
             {
                 AddEntry(slpPaths[i]);
@@ -313,7 +324,7 @@ namespace SlippiGUI
 
             int totalClipsP1 = 0;
             int totalClipsP2 = 0;
-            foreach (var item in entries)
+            foreach (var item in filteredEntries)
             {
                 totalClipsP1 += item.numClipsP1;
                 totalClipsP2 += item.numClipsP2;
@@ -321,7 +332,7 @@ namespace SlippiGUI
 
             totalClipsLabel.Text = "Total P1 Save States: " + totalClipsP1 + "        Total P2 Save States: " + totalClipsP2;
 
-            dataGridView1.DataSource = entries;
+            dataGridView1.DataSource = filteredEntries;
 
             //entries[0].name = "FF";
            // entries[0].p1 = Character.Falco;
@@ -360,8 +371,26 @@ namespace SlippiGUI
                 se.clipFramesP2 = CheckForClips(path, 1);
                 se.numClipsP1 = se.clipFramesP1.Length;
                 se.numClipsP2 = se.clipFramesP2.Length;
+
                
-                entries.Add(se);
+
+                int gameSeconds = (test.duration + 123) / 60;//(test.duration + 123) / 60;
+                int minutes = gameSeconds / 60;
+                int seconds = gameSeconds % 60;
+                se.duration = $"{minutes}m {seconds}s";//String.Format("{}m {}s", minutes, seconds); //gameLen.ToString();//test.version_major + " " + test.version_minor + " " + test.version_patch;//SwapEndian(test.timer).ToString();
+                                                         //DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(se.dateAndTime);
+                                                         //DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                // Add seconds to epoch
+                //DateTime dateTime = epoch.AddTicks((long)test.start_time);//.ToLocalTime();
+                TimeFields tm = new TimeFields(test.start_time);
+                se.dateAndTime = tm.ToString();//tm.ToString();//test.timer.ToString();//dateTime.ToString();//dateTime.ToString();
+
+                //se.dateAndTime = "test";//$"Date: {dateTime:yyyy-MM-dd HH:mm:ss}";
+
+                //this.Invoke(() => entries.Add(se));
+                this.Invoke((MethodInvoker)(() => allEntries.Add(se)));
+                this.Invoke((MethodInvoker)(() => filteredEntries.Add(se)));
             }
             finally
             {
@@ -396,7 +425,7 @@ namespace SlippiGUI
             return result;
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void exportButton_Click(object sender, EventArgs e)
         {
             var dialog = new CommonOpenFileDialog
             {
@@ -408,9 +437,9 @@ namespace SlippiGUI
             {
                 string selectedPath = dialog.FileName;
                 exportFolderPath = selectedPath;
-                label3.Text = selectedPath;
-                exportPathToolTip.SetToolTip(label3, exportFolderPath);
-                File.WriteAllText("config.txt", exportFolderPath);
+                exportLabel.Text = selectedPath;
+                exportPathToolTip.SetToolTip(exportLabel, exportFolderPath);
+                WriteSettings();
                 //textBoxFolder.Text = selectedPath;
             }
             else
@@ -455,7 +484,7 @@ namespace SlippiGUI
 
                // CheckForAllClips();
 
-                //button1.Show();
+                //saveStatesButton.Show();
 
                 //listBox1.Show();
             }
@@ -483,11 +512,204 @@ namespace SlippiGUI
             dataGridView1.Columns.Add(col);
         }
 
-        private void clearButton_Click(object sender, EventArgs e)
+        private async void importButton_Click(object sender, EventArgs e)
         {
-            dataGridView1.DataSource = null;
-            entries.Clear();
-            slpPaths = null;
+            var dialog = new CommonOpenFileDialog
+            {
+                IsFolderPicker = true,
+                Title = "Select a folder"
+            };
+
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                string selectedPath = dialog.FileName;
+                importFolderPath = selectedPath;
+                importLabel.Text = selectedPath;
+                importPathToolTip.SetToolTip(importLabel, importFolderPath);
+
+                WriteSettings();
+
+                allEntries.Clear();
+                filteredEntries.Clear();
+
+                await Task.Run(() => PopulateGridFromInputFolder());
+                //PopulateGridFromInputFolder();
+                //textBoxFolder.Text = selectedPath;
+            }
+            else
+            {
+                
+            }
+        }
+
+        private void PopulateGridFromInputFolder()
+        {
+            //string[] files;
+
+            //entries.Clear();
+
+            try
+            {
+                //files = Directory.GetFiles(importFolderPath, "*.slp"); // Get all .txt files
+                var files = Directory.GetFiles(importFolderPath, "*.slp")
+                    .OrderByDescending(f => File.GetCreationTime(f))
+                    .ToList();
+
+                if (files.Count > 0)
+                {
+                    slpPaths = files.ToArray();
+
+                    dataGridView1.DataSource = filteredEntries;
+
+                    for( int i = 0; i < slpPaths.Length; ++i )
+                    {
+                        SetInfo(i);
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine("Error: Folder not found.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+            }
+        }
+
+        private void WriteSettings()
+        {
+            string text = exportFolderPath + "\n" + importFolderPath;
+            File.WriteAllText("config.txt", text);
+        }
+
+        private void ReadSettings()
+        {
+            if (File.Exists("config.txt"))
+            {
+                var configLines = File.ReadAllLines("config.txt"); // loads all lines
+
+                if (configLines.Length < 2)
+                {
+                   // Console.WriteLine("Error: The config.txt file must contain at least two lines.");
+                    // You can also throw an exception or handle this differently
+                    return;
+                }
+
+                exportFolderPath = configLines[0];
+                importFolderPath = configLines[1];
+
+                exportLabel.Text = exportFolderPath;
+                exportPathToolTip.SetToolTip(exportLabel, exportFolderPath);
+
+                importLabel.Text = importFolderPath ;
+                importPathToolTip.SetToolTip(importLabel, importFolderPath);
+            }
+        }
+
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            if (importFolderPath != null)
+            {
+                //Refresh();
+                //Application.DoEvents();
+
+                dataGridView1.DataSource = filteredEntries;
+
+                await Task.Yield();              // Yield back to UI thread to finish painting
+                await Task.Delay(100);
+
+                await Task.Run(() => PopulateGridFromInputFolder());
+            }
+        }
+
+        private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                return;
+
+            var row = dataGridView1.Rows[e.RowIndex];
+            var entry = row.DataBoundItem as SlippiEntry;
+
+            if (entry == null)
+                return;
+
+            // Only rename if FileName column was edited
+            if (dataGridView1.Columns[e.ColumnIndex].DataPropertyName == "gameName")
+            {
+                string oldPath = entry.filePath;
+                string newFileName = entry.gameName + ".slp"; // updated name from the edited cell
+                string newPath = Path.Combine(Path.GetDirectoryName(oldPath), newFileName);
+
+                try
+                {
+                    if (File.Exists(oldPath) && !File.Exists(newPath))
+                    {
+                        File.Move(oldPath, newPath);
+                        entry.filePath = newPath; // update path after rename
+                    }
+                    else
+                    {
+                        MessageBox.Show("Rename failed: File already exists or original file missing.");
+                        entry.gameName = originalGameName;
+                        // Optionally revert the value here
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error renaming file: {ex.Message}");
+                }
+            }
+        }
+
+        private void dataGridView1_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+        {
+            if (dataGridView1.Columns[e.ColumnIndex].DataPropertyName == "gameName")
+            {
+                var entry = dataGridView1.Rows[e.RowIndex].DataBoundItem as SlippiEntry;
+                if (entry != null)
+                    originalGameName = entry.gameName;
+            }
+        }
+
+        public static ushort SwapEndian(ushort val)
+        {
+            return (ushort)((val >> 8) | (val << 8));
+        }
+
+        public static uint SwapEndian(uint val)
+        {
+            return (val >> 24) |
+                  ((val >> 8) & 0x0000FF00) |
+                  ((val << 8) & 0x00FF0000) |
+                  (val << 24);
+        }
+
+        public static ulong SwapEndian(ulong val)
+        {
+            return ((val & 0x00000000000000FFUL) << 56) |
+                    ((val & 0x000000000000FF00UL) << 40) |
+                    ((val & 0x0000000000FF0000UL) << 24) |
+                    ((val & 0x00000000FF000000UL) << 8) |
+                    ((val & 0x000000FF00000000UL) >> 8) |
+                    ((val & 0x0000FF0000000000UL) >> 24) |
+                    ((val & 0x00FF000000000000UL) >> 40) |
+                    ((val & 0xFF00000000000000UL) >> 56);
+        }
+
+        private void searchTextBox_TextChanged(object sender, EventArgs e)
+        {
+            string filter = searchTextBox.Text.Trim().ToLower();
+
+            filteredEntries.Clear();
+
+            foreach (var entry in allEntries)
+            {
+                if (entry.gameName.ToLower().Contains(filter))
+                {
+                    filteredEntries.Add(entry);
+                }
+            }
         }
     }
 }
@@ -502,7 +724,30 @@ public class SlippiEntry
     public int numClipsP1 { get; set; }
     public int numClipsP2 { get; set; }
     public string dateAndTime { get; set; }
-    public string matchLength { get; set; }
+    public string duration { get; set; }
     public int[] clipFramesP1 { get; set; }
     public int[] clipFramesP2 { get; set; }
+}
+
+struct TimeFields
+{
+    public UInt16 year;
+    public byte month;
+    public byte day;
+    public byte hour;
+    public byte minute;
+    public byte second;
+
+    public override string ToString() =>
+    new DateTime(year, month, day, hour, minute, second)
+        .ToString("MMMM d, yyyy  -  h:mm tt");
+    public TimeFields( UInt64 t )
+    {
+        year = (ushort)(t >> 48);
+        month = (byte)((t >> 40) & 0xFF);
+        day = (byte)((t >> 32) & 0xFF);
+        hour = (byte)((t >> 24) & 0xFF);
+        minute = (byte)((t >> 16) & 0xFF);
+        second = (byte)((t >> 8) & 0xFF);
+    }
 }
