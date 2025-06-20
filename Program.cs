@@ -29,6 +29,12 @@ namespace SlippiGUI
         [DllImport("slippi_analyzer.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void create_savestates(IntPtr exportPathPtr, IntPtr fileNamePtr, IntPtr gameNamePtr, Int32 hmnPlayer,
             Int32 clipLength );
+
+        [DllImport("slippi_analyzer.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void create_filtered_savestates(IntPtr exportPathPtr, IntPtr fileNamePtr, IntPtr gameNamePtr, Int32 hmnPlayer,
+            Int32 clipLength);
+
+        
         /// <summary>
         /// The main entry point for the application.
         /// </summary>

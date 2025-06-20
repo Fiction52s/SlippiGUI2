@@ -152,7 +152,6 @@ namespace SlippiGUI
         private string exportFolderPath;
         private BindingList<SlippiEntry> entries;
         ToolTip exportPathToolTip;
-        int numTotalClips;
         public Form1()
         {
             InitializeComponent();
@@ -187,14 +186,14 @@ namespace SlippiGUI
             // Define column for 'name'
 
             AddGameInfoColumn("File Path", "filePath", 200, true);
-            AddGameInfoColumn("Game Name", "gameName", 200, false);
+            AddGameInfoColumn("Save State Name", "gameName", 200, false);
             AddGameInfoColumn("Player 1", "p1", 100, true);
             AddGameInfoColumn("Player 2", "p2", 100, true);
             AddGameInfoColumn("Stage", "stage", 100, true);
-            AddGameInfoColumn("Number of Save States", "numClips", 100, true);
+            AddGameInfoColumn("P1 Save State Count", "numClipsP1", 50, true);
+            AddGameInfoColumn("P2 Save State Count", "numClipsP2", 50, true);
 
-            totalClipsLabel.Text = "Total save states: " + 0;
-            numTotalClips = 0;
+            totalClipsLabel.Text = "Total P1 Save States: " + 0 + "        Total P2 Save States: " + 0;//"Total save states: " + 0;
 
             label3.AutoSize = false;
             label3.AutoEllipsis = true;
@@ -250,12 +249,21 @@ namespace SlippiGUI
                 return;
             }
 
+            int totalExportedClips = 0;
             foreach( var item in entries )
             {
+                if( comboBox1.SelectedIndex == 0 )
+                {
+                    totalExportedClips += item.numClipsP1;
+                }
+                else
+                {
+                    totalExportedClips += item.numClipsP2;
+                }
                 CreateSavestates(exportFolderPath, item.filePath, item.gameName, clipLength);
             }
 
-            MessageBox.Show("Created " + numTotalClips + " save states in " + exportFolderPath);
+            MessageBox.Show("Created " + totalExportedClips + " save states in " + exportFolderPath);
             // Remove invalid file name characters
 
             //later make sure the gameName is safe before validating
@@ -286,7 +294,8 @@ namespace SlippiGUI
             IntPtr gameNamePtr = Marshal.AllocHGlobal(gameName_utf8.Length);
             Marshal.Copy(gameName_utf8, 0, gameNamePtr, gameName_utf8.Length);
 
-            Program.create_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
+            //Program.create_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
+            Program.create_filtered_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, comboBox1.SelectedIndex, clipLength);
 
             //MessageBox.Show("Created " + listBox1.Items.Count + " save states in " + exportFolder + " with game name " + gameName + " with clip length " + clipLength);
         }
@@ -302,14 +311,15 @@ namespace SlippiGUI
                 AddEntry(slpPaths[i]);
             }
 
-            int totalClips = 0;
+            int totalClipsP1 = 0;
+            int totalClipsP2 = 0;
             foreach (var item in entries)
             {
-                totalClips += item.numClips;   
+                totalClipsP1 += item.numClipsP1;
+                totalClipsP2 += item.numClipsP2;
             }
 
-            totalClipsLabel.Text = "Total save states: " + totalClips;
-            numTotalClips = totalClips;
+            totalClipsLabel.Text = "Total P1 Save States: " + totalClipsP1 + "        Total P2 Save States: " + totalClipsP2;
 
             dataGridView1.DataSource = entries;
 
@@ -346,32 +356,12 @@ namespace SlippiGUI
                 se.p1 = test.starting_character_colours[0].character;
                 se.p2 = test.starting_character_colours[1].character;
                 se.stage = test.stage;
-                se.clipFrames = CheckForClips(path);
-                se.numClips = se.clipFrames.Length;
-                //CheckForClips
-                //se.matchLength = test.
-
+                se.clipFramesP1 = CheckForClips(path, 0);
+                se.clipFramesP2 = CheckForClips(path, 1);
+                se.numClipsP1 = se.clipFramesP1.Length;
+                se.numClipsP2 = se.clipFramesP2.Length;
+               
                 entries.Add(se);
-                //string n = Encoding.UTF8.GetString(test.connect_codes[1].bytes, 0, 10).TrimEnd('\0');
-
-                //label1.Text = "Player 1: " + test.starting_character_colours[0].character.ToString()
-                //    + "\n" + "Player 2: " + test.starting_character_colours[1].character.ToString()
-                //    + "\n" + "Stage: " + test.stage.ToString()
-                //    + "\n" + "Max duration (seconds): " + test.duration;
-
-                //label1.Show();
-                //label2.Show();
-                //label3.Show();
-                //label4.Show();
-                //label5.Show();
-                //label6.Show();
-
-                //textBox1.Show();
-                //textBox2.Show();
-
-                ////button2.Show();
-
-                //comboBox1.Show();
             }
             finally
             {
@@ -385,14 +375,14 @@ namespace SlippiGUI
             //CheckForAllClips();
         }
 
-        private int[] CheckForClips( string path )
+        private int[] CheckForClips( string path, int pIndex )
         {
             byte[] utf8 = Encoding.UTF8.GetBytes(path + "\0");
             IntPtr namePtr = Marshal.AllocHGlobal(utf8.Length);
             Marshal.Copy(utf8, 0, namePtr, utf8.Length);
 
             UIntPtr len;
-            IntPtr arrayPtr = Program.check_clips(namePtr, out len, comboBox1.SelectedIndex);
+            IntPtr arrayPtr = Program.check_clips(namePtr, out len, pIndex);
             int[] result = new int[(int)len];
 
             if (arrayPtr != IntPtr.Zero)
@@ -404,14 +394,6 @@ namespace SlippiGUI
             Marshal.FreeHGlobal(namePtr);
 
             return result;
-
-            //listBox1.Items.Clear();
-            //foreach (int num in result)
-            //{
-            //    listBox1.Items.Add(num);
-            //}
-
-            
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -500,6 +482,13 @@ namespace SlippiGUI
             }
             dataGridView1.Columns.Add(col);
         }
+
+        private void clearButton_Click(object sender, EventArgs e)
+        {
+            dataGridView1.DataSource = null;
+            entries.Clear();
+            slpPaths = null;
+        }
     }
 }
 
@@ -510,8 +499,10 @@ public class SlippiEntry
     public Character p1 { get; set; }
     public Character p2 { get; set; }
     public Stage stage { get; set; }
-    public int numClips { get; set; }
+    public int numClipsP1 { get; set; }
+    public int numClipsP2 { get; set; }
     public string dateAndTime { get; set; }
     public string matchLength { get; set; }
-    public int[] clipFrames { get; set; }
+    public int[] clipFramesP1 { get; set; }
+    public int[] clipFramesP2 { get; set; }
 }
