@@ -66,14 +66,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SlippiGUI.exe" size="49120">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SlippiGUI.exe" size="52192">
       <assemblyIdentity name="SlippiGUI" version="1.0.0.0" language="neutral" processorArchitecture="amd64" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>Ob/Rx5DJIgqKqj+5NMNUW+ZfZhcVWje4UrnEy1FlDjw=</dsig:DigestValue>
+        <dsig:DigestValue>bFs293g38ArrkZzeBSmwpYWXzmRtO9Oc3QW6nWpwMhc=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

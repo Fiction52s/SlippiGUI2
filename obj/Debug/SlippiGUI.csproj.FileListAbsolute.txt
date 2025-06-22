@@ -11,3 +11,8 @@ C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Deb
 C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.Shell.dll
 C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.xml
 C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\Microsoft.WindowsAPICodePack.Shell.xml
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.HowToForm.resources
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.exe.manifest
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\SlippiGUI.exe.manifest
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\bin\Debug\SlippiGUI.application
+C:\Users\ficti\Documents\Visual Studio 2015\Projects\SlippiGUI\SlippiGUI\obj\Debug\SlippiGUI.application

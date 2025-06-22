@@ -1,2 +1,5 @@
-
-F:\Slippi\test
+NONE
+F:\Slippi
+0
+2
+360

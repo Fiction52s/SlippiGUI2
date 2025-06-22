@@ -117,16 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="folderBrowserDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
-  </metadata>
-  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>186, 17</value>
-  </metadata>
-  <metadata name="exportMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>283, 3</value>
-  </metadata>
-  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>27</value>
-  </metadata>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Video Guide :
+
+
+1. Play any Melee match that creates a .slp file
+2. During the match, press D-PAD DOWN when you want to make
+    a save state of the situation that just happened
+3. Open this application
+4. Set Replay folder or Drag/Drop in files
+5. Set Export folder to your GCI folder (GUIDE)
+6. Select replays in the grid
+7. Right-click on your highlighted selection and choose the
+    desired export option
+8. Load the save states in Training Mode - Community Edition (it's free!)
+9. Practice any situation you want whenever you want! The app runs
+	    on any Slippi file as long as it has D-PAD inputs, so feel free to sav
+    states at your local or even a major!
+
+More detailed instructions
+
+
+*READ: This application works best with the latest version of Training 
+Mode - Community Edition (TM-CE) developed by Aitch and UnclePunch.
+Join Aitch’s R&amp;D Discord Server linked here(hyperlink) to get the latest 
+versions and contribute suggestions, ideas, and bugs reports for both 
+TM-CE and Melee Improover! </value>
+  </data>
+  <data name="label2.Text" xml:space="preserve">
+    <value>DISCLAIMER: Work is still being done to get exported savestates fully
+functional. If you find something wrong with your savestate, please report
+it by including your SLP file, and provide the frame number it was exported
+from. Thank you!</value>
+  </data>
 </root>
